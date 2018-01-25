@@ -1,0 +1,28 @@
+#!/bin/bash
+# Sign with lunarg key
+DEBUILD_DPKG_BUILDPACKAGE_OPTS="-k 'brett@lunarg.com'"
+unset DIST
+
+# Build for stretch..
+export DIST=stable
+rm ../*.dsc ../*.build ../*.changes ../*.xz ../*.gz
+git reset --hard
+debian/rules gentarball
+dch --vendor=Debian --local=~lunarg ""
+dch --vendor=Debian --distribution=$DIST --release ""
+debuild -i -us -uc -S
+sudo ARCH=amd64 cowbuilder --pkgname-logfile --build ../*.dsc
+# Don't gratuitously rebuild source components
+sudo DEBBUILDOPTS="-b" ARCH=i386 cowbuilder --pkgname-logfile --build ../*.dsc
+
+# Build for xenial..
+export DIST=xenial
+rm -f ../*.dsc ../*.build ../*.changes
+git reset --hard
+dch --vendor=Ubuntu --local=$DIST~lunarg ""
+dch --vendor=Ubuntu --distribution=$DIST --release ""
+debuild -i -us -uc -sa -S
+sudo ARCH=amd64 cowbuilder --pkgname-logfile --build ../*.dsc
+# Don't gratuitously rebuild source components
+sudo DEBBUILDOPTS="-b" ARCH=i386 cowbuilder --pkgname-logfile --build ../*.dsc
+
