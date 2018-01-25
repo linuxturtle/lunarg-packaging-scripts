@@ -8,3 +8,4 @@ for file in /var/cache/pbuilder/xenial-*/result/*.changes; do
 	reprepro -Vb . include xenial $file;
 done
 
+reprepro export
