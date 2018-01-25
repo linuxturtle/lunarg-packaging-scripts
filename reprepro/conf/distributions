@@ -1,0 +1,15 @@
+Origin: vulkan.lunarg.com
+Label: LunarG Vulkan Package Repository
+Suite: stable
+Codename: stretch
+Architectures: amd64 i386 source
+Components: main
+SignWith: brett@lunarg.com
+
+Origin: vulkan.lunarg.com
+Label: LunarG Vulkan Package Repository
+Suite: 16.04
+Codename: xenial
+Architectures: amd64 i386 source
+Components: main
+SignWith: brett@lunarg.com
