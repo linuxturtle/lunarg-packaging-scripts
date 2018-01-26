@@ -12,8 +12,8 @@ dch --vendor=Debian --local=~lunarg ""
 dch --vendor=Debian --distribution=$DIST --release ""
 debuild -i -us -uc -S
 sudo ARCH=amd64 cowbuilder --pkgname-logfile --build ../*.dsc
-# Don't gratuitously rebuild source components
-sudo DEBBUILDOPTS="-b" ARCH=i386 cowbuilder --pkgname-logfile --build ../*.dsc
+# Only rebuild arch-specific components..
+sudo ARCH=i386 cowbuilder --binary-arch --pkgname-logfile --build ../*.dsc
 
 # Build for xenial..
 export DIST=xenial
@@ -23,6 +23,6 @@ dch --vendor=Ubuntu --local=$DIST~lunarg ""
 dch --vendor=Ubuntu --distribution=$DIST --release ""
 debuild -i -us -uc -sa -S
 sudo ARCH=amd64 cowbuilder --pkgname-logfile --build ../*.dsc
-# Don't gratuitously rebuild source components
-sudo DEBBUILDOPTS="-b" ARCH=i386 cowbuilder --pkgname-logfile --build ../*.dsc
+# Only rebuild arch-specific components..
+sudo ARCH=i386 cowbuilder --binary-arch --pkgname-logfile --build ../*.dsc
 
