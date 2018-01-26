@@ -9,7 +9,7 @@ Misc scripts used in building specific vulkan packages for LunarG
    - It assumes a gpg key named "brett@lunarg.com" exists to sign the packages/archive with.
    - It assumes default pbuilder/cowbuilder chroot location: i.e. /var/cache/pbuilder
 
-- <b>update-chroots</b>
+- <b>cowbuild-update-chroots</b>
 
    Simple script to update the 4 chroots mentioned above.  This should be run before the first build of the day.
 
