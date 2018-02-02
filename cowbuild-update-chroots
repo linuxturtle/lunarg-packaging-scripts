@@ -1,5 +1,5 @@
 #!/bin/sh
-DIST=xenial ARCH=amd64 cowbuilder --update
-DIST=xenial ARCH=i386 cowbuilder --update
-DIST=stable ARCH=amd64 cowbuilder --update
-DIST=stable ARCH=i386 cowbuilder --update
+sudo DIST=xenial ARCH=amd64 cowbuilder --update
+sudo DIST=xenial ARCH=i386 cowbuilder --update
+sudo DIST=stable ARCH=amd64 cowbuilder --update
+sudo DIST=stable ARCH=i386 cowbuilder --update
