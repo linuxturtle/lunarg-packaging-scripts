@@ -8,6 +8,7 @@ Misc scripts used in building specific vulkan packages for LunarG
    - it assumes there exist 4 updated pbuilder chroots named stretch-amd64, stretch-i386, xenial-amd64, and xenial-i386.
    - It assumes a gpg key named "brett@lunarg.com" exists to sign the packages/archive with.
    - It assumes default pbuilder/cowbuilder chroot location: i.e. /var/cache/pbuilder
+   - It depends on the ~.pbuilderrc config file in this repository
 
 - <b>cowbuild-update-chroots</b>
 
@@ -16,3 +17,7 @@ Misc scripts used in building specific vulkan packages for LunarG
 - <b>reprepro-add-lunarg</b>
 
    This is run in the staging repository.  It simply adds all of the files built by cowbuilder to the staging repository, and signs the Release file.
+
+- <b>.pbuilderrc</b>
+
+   This should go in your home directory, to make the cowbuild-\* scripts work properly
