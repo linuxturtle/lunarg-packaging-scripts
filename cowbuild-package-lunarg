@@ -3,26 +3,59 @@
 DEBUILD_DPKG_BUILDPACKAGE_OPTS="-k 'brett@lunarg.com'"
 unset DIST
 
+SOURCE=$(dpkg-parsechangelog | sed -n 's/^Source: //p')
+BASE_VERSION=$(dpkg-parsechangelog | sed -n 's/^Version: //p' | sed -n 's/-.*$//p')
+PKG_ARCH=$(sed -n 's/^Architecture: //p' debian/control)
+
 # Build for stretch..
 export DIST=stable
-rm ../*.dsc ../*.build ../*.changes ../*.xz ../*.gz
 git reset --hard
-debian/rules gentarball
+rm -f "../${SOURCE}_${BASE_VERSION}*"
+# Check all the normal sources for an orig tarball before generating a new one
+# (which likely will have a different hash than the original)
+origtargz -dt
+if [ $? -ne 0 ]; then
+    debian/rules gentarball
+fi
 dch --vendor=Debian --local=~lunarg ""
 dch --vendor=Debian --distribution=$DIST --release ""
 debuild -i -us -uc -sa -S
-sudo DIST=$DIST ARCH=amd64 cowbuilder --pkgname-logfile --build ../*.dsc
-# Only rebuild arch-specific components..
-sudo DIST=$DIST ARCH=i386 cowbuilder --binary-arch --pkgname-logfile --build ../*.dsc
+FULL_VERSION=$(dpkg-parsechangelog | sed -n 's/^Version: //p')
+DSC_FILE="../${SOURCE}_${FULL_VERSION}.dsc"
+if [[ $PKG_ARCH =~ "amd64" ]] || [[ $PKG_ARCH =~ "all" ]] || [[ $PKG_ARCH =~ "any" ]] ; then
+    echo "#########################################################"
+    echo "Building amd64 $DIST packages.."
+    echo "#########################################################"
+    sudo DIST=$DIST ARCH=amd64 cowbuilder --pkgname-logfile --build $DSC_FILE
+fi
+if [[ $PKG_ARCH =~ "i386" ]] || [[ $PKG_ARCH =~ "any" ]] ; then
+    echo "#########################################################"
+    echo "Building i386 $DIST packages.."
+    echo "#########################################################"
+    # Don't rebuild the source package, only binary.
+    sudo DIST=$DIST ARCH=i386 cowbuilder --binary-arch --pkgname-logfile --build $DSC_FILE
+fi
 
 # Build for xenial..
 export DIST=xenial
-rm -f ../*.dsc ../*.build ../*.changes
 git reset --hard
+rm -f "../${SOURCE}_${BASE_VERSION}*"
 dch --vendor=Ubuntu --local=$DIST~lunarg ""
 dch --vendor=Ubuntu --distribution=$DIST --release ""
 debuild -i -us -uc -sa -S
-sudo DIST=$DIST ARCH=amd64 cowbuilder --pkgname-logfile --build ../*.dsc
-# Only rebuild arch-specific components..
-sudo DIST=$DIST ARCH=i386 cowbuilder --binary-arch --pkgname-logfile --build ../*.dsc
+FULL_VERSION=$(dpkg-parsechangelog | sed -n 's/^Version: //p')
+DSC_FILE="../${SOURCE}_${FULL_VERSION}.dsc"
+if [[ $PKG_ARCH =~ "amd64" ]] || [[ $PKG_ARCH =~ "all" ]] || [[ $PKG_ARCH =~ "any" ]] ; then
+    echo "#########################################################"
+    echo "Building amd64 $DIST packages.."
+    echo "#########################################################"
+    sudo DIST=$DIST ARCH=amd64 cowbuilder --pkgname-logfile --build $DSC_FILE
+fi
+if [[ $PKG_ARCH =~ "i386" ]] || [[ $PKG_ARCH =~ "any" ]] ; then
+    echo "#########################################################"
+    echo "Building i386 $DIST packages.."
+    echo "#########################################################"
+    # Don't rebuild the source package, only binary.
+    sudo DIST=$DIST ARCH=i386 cowbuilder --binary-arch --pkgname-logfile --build $DSC_FILE
+fi
 
