@@ -1,8 +1,6 @@
 #!/bin/bash
 # Sign with lunarg key
 DEBUILD_DPKG_BUILDPACKAGE_OPTS="-k 'brett@lunarg.com'"
-unset DIST
-
 
 SOURCE=$(dpkg-parsechangelog | sed -n 's/^Source: //p')
 BASE_VERSION=$(dpkg-parsechangelog | sed -n 's/^Version: //p' | sed -n 's/-.*$//p')
@@ -36,7 +34,7 @@ cowbuild_package () {
 }
 
 # Check all the normal sources for an orig tarball before generating a new one
-# (which likely will have a different hash than the original)
+# (which likely will have a different hash than a pre-existing original)
 origtargz -dt
 if [ $? -ne 0 ]; then
     debian/rules gentarball
@@ -45,9 +43,13 @@ fi
 # Build for stretch..
 cowbuild_package stable Debian "~lunarg"
 
+# Build for xenial..
+cowbuild_package xenial Ubuntu "xenial~lunarg"
+
 # Build for jessie..
 #cowbuild_package oldstable Debian "jessie~lunarg"
 
-# Build for xenial..
-cowbuild_package xenial Ubuntu "xenial~lunarg"
+# Build for trusty..
+#cowbuild_package trusty Ubuntu "trusty~lunarg"
+
 
