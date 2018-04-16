@@ -10,9 +10,12 @@ Misc scripts used in building specific vulkan packages for LunarG
    - It assumes default pbuilder/cowbuilder chroot location: i.e. /var/cache/pbuilder
    - It depends on the ~.pbuilderrc config file in this repository
 
+- <b>cowbuild-create-chroots</b>
+   Simple script to create the 4 chroots mentioned above. This should be run after copying the .pbuilderrc file to your home directory. The debian-archive-keyring package is required to create the debian chroots.
+
 - <b>cowbuild-update-chroots</b>
 
-   Simple script to update the 4 chroots mentioned above.  This should be run before the first build of the day.
+   Simple script to update the 4 chroots mentioned above. This should be run before the first build of the day.
 
 - <b>reprepro-add-lunarg</b>
 

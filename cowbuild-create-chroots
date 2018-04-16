@@ -7,6 +7,8 @@ sudo mkdir -p /var/cache/pbuilder/stretch-amd64
 sudo mkdir -p /var/cache/pbuilder/stretch-i386
 
 # Create copy-on-write chroots.
+# The debian-archive-keyring package is required to create the debian chroots. e.g.
+# $ sudo apt-get install debian-archive-keyring
 sudo DIST=xenial ARCH=amd64 cowbuilder --create
 sudo DIST=xenial ARCH=i386 cowbuilder --create
 sudo DIST=stable ARCH=amd64 cowbuilder --create
