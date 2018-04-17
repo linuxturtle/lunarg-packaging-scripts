@@ -1,5 +1,15 @@
 #!/bin/sh
-sudo DIST=xenial ARCH=amd64 cowbuilder create
-sudo DIST=xenial ARCH=i386 cowbuilder create
-sudo DIST=stable ARCH=amd64 cowbuilder create
-sudo DIST=stable ARCH=i386 cowbuilder create
+
+# Make directories as needed; no error if they already exist.
+sudo mkdir -p /var/cache/pbuilder/xenial-amd64
+sudo mkdir -p /var/cache/pbuilder/xenial-i386
+sudo mkdir -p /var/cache/pbuilder/stretch-amd64
+sudo mkdir -p /var/cache/pbuilder/stretch-i386
+
+# Create copy-on-write chroots.
+# The debian-archive-keyring package is required to create the debian chroots. e.g.
+# $ sudo apt-get install debian-archive-keyring
+sudo DIST=xenial ARCH=amd64 cowbuilder --create
+sudo DIST=xenial ARCH=i386 cowbuilder --create
+sudo DIST=stable ARCH=amd64 cowbuilder --create
+sudo DIST=stable ARCH=i386 cowbuilder --create
