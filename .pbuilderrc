@@ -12,7 +12,7 @@ DEBIAN_SUITES=($UNSTABLE_CODENAME $TESTING_CODENAME $STABLE_CODENAME $OLDSTABLE_
     "unstable" "testing" "stable" "oldstable")
 
 # List of Ubuntu suites. Update these when needed.
-UBUNTU_SUITES=("trusty" "xenial" "zesty" "artful")
+UBUNTU_SUITES=("trusty" "xenial" "bionic")
 
 # Mirrors to use. Update these to your preferred mirror.
 DEBIAN_MIRROR="deb.debian.org"
