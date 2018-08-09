@@ -24,13 +24,13 @@ cowbuild_package () {
 	echo "#########################################################"
 	sudo DIST=$DIST ARCH=amd64 cowbuilder --pkgname-logfile --build $DSC_FILE
     fi
-    if [[ $PKG_ARCH =~ "i386" ]] || [[ $PKG_ARCH =~ "any" ]] ; then
-	echo "#########################################################"
-	echo "Building i386 $DIST packages.."
-	echo "#########################################################"
-	# Don't rebuild the source package, only binary.
-	sudo DIST=$DIST ARCH=i386 cowbuilder --binary-arch --pkgname-logfile --build $DSC_FILE
-    fi
+#    if [[ $PKG_ARCH =~ "i386" ]] || [[ $PKG_ARCH =~ "any" ]] ; then
+#	echo "#########################################################"
+#	echo "Building i386 $DIST packages.."
+#	echo "#########################################################"
+#	# Don't rebuild the source package, only binary.
+#	sudo DIST=$DIST ARCH=i386 cowbuilder --binary-arch --pkgname-logfile --build $DSC_FILE
+#    fi
 }
 
 # Check all the normal sources for an orig tarball before generating a new one
@@ -42,6 +42,9 @@ fi
 
 # Build for stretch..
 cowbuild_package stable Debian "~lunarg"
+
+# Build for bionic..
+cowbuild_package bionic Ubuntu "bionic~lunarg"
 
 # Build for xenial..
 cowbuild_package xenial Ubuntu "xenial~lunarg"

@@ -13,3 +13,11 @@ Codename: xenial
 Architectures: amd64 i386 source
 Components: main
 SignWith: brett@lunarg.com
+
+Origin: vulkan.lunarg.com
+Label: LunarG Vulkan Package Repository
+Suite: 18.04
+Codename: bionic
+Architectures: amd64 i386 source
+Components: main
+SignWith: brett@lunarg.com

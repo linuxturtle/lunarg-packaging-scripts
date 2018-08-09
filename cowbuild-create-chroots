@@ -1,5 +1,6 @@
 #!/bin/sh
+sudo DIST=bionic ARCH=amd64 cowbuilder create
 sudo DIST=xenial ARCH=amd64 cowbuilder create
-sudo DIST=xenial ARCH=i386 cowbuilder create
+#sudo DIST=xenial ARCH=i386 cowbuilder create
 sudo DIST=stable ARCH=amd64 cowbuilder create
-sudo DIST=stable ARCH=i386 cowbuilder create
+#sudo DIST=stable ARCH=i386 cowbuilder create

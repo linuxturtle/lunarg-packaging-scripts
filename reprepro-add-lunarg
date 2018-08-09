@@ -8,4 +8,8 @@ for file in /var/cache/pbuilder/xenial-*/result/*.changes; do
 	reprepro -Vb . include xenial $file;
 done
 
+for file in /var/cache/pbuilder/bionic-*/result/*.changes; do
+	reprepro -Vb . include bionic $file;
+done
+
 reprepro export
