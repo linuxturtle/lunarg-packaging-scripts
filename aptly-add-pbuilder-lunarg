@@ -1,0 +1,15 @@
+#!/bin/bash
+source $(dirname $(readlink -f $0))/.common-lunarg.sh
+
+for Distro in "${LunarGDistros[@]}";
+do
+    ChangesDir="/var/cache/pbuilder/${Distro}-amd64/result"
+    if aptly repo -raw=true list 2> /dev/null | grep -q -e "^${Distro}$"; then
+	echo "*** Importing packages from ${ChangesDir} to ${Distro}"
+	aptly repo include -accept-unsigned -repo=${Distro} \
+	    ${ChangesDir}
+    else
+        echo "*** Local repository ${Distro} does not exist"
+	exit 1
+    fi
+done

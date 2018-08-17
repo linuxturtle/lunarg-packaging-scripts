@@ -1,0 +1,14 @@
+#!/bin/bash
+usage="$0 <prefix>"
+if [ "$#" -ne 1 ]; then
+    echo $usage
+    exit 1
+fi
+
+source $(dirname $(readlink -f $0))/.common-lunarg.sh
+Prefix=$1
+
+for Distro in "${LunarGDistros[@]}";
+do
+	aptly snapshot create ${Distro}_${Prefix} from repo ${Distro}
+done

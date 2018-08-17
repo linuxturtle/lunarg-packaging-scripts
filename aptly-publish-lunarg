@@ -1,0 +1,38 @@
+#!/bin/bash
+usage="$0 [-p <prefix>] -r|-s"
+PType="repo"
+Prefix="Daily"
+UpdateArg="update"
+
+source $(dirname $(readlink -f $0))/.common-lunarg.sh
+
+while getopts ":p:s" options; do
+    case $options in
+	p ) Prefix=$OPTARG;;
+	s ) PType="snapshot"
+	    UpdateArg="switch";;
+	* ) echo $usage
+	    exit 1;;
+    esac
+done
+
+for Distro in "${LunarGDistros[@]}";
+do
+    if [ "${PType}" == "snapshot" ]; then
+        Snapshot=${Distro}_${Prefix}
+    fi
+    # Update if it's already published
+    if aptly publish -raw=true list 2> /dev/null | grep -q -e "^${Prefix} ${Distro}$"; then
+        echo "*** Publishing update to ${Prefix} ${Distro}"
+	aptly publish ${UpdateArg} \
+	    -gpg-key="${LunarGGPGKey}" \
+	    ${Distro} ${Prefix} ${Snapshot:-}
+    else
+        echo "*** Publishing to newly created ${Prefix} ${Distro}"
+	aptly publish ${PType} \
+	    -gpg-key="${LunarGGPGKey}" \
+	    -label="LunarG Vulkan Package ${Prefix} Repository"\
+	    -origin="vulkan.lunarg.com"\
+	    ${Snapshot:-$Distro} ${Prefix}
+    fi
+done
