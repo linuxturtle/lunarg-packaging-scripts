@@ -5,6 +5,17 @@ DEBUILD_DPKG_BUILDPACKAGE_OPTS="-k 'brett@lunarg.com'"
 SOURCE=$(dpkg-parsechangelog | sed -n 's/^Source: //p')
 BASE_VERSION=$(dpkg-parsechangelog | sed -n 's/^Version: //p' | sed -n 's/-.*$//p')
 PKG_ARCH=$(sed -n 's/^Architecture: //p' debian/control)
+BUILD_VERSION="0."
+
+usage="$0 [-b <build version>]"
+
+while getopts ":b:" options; do
+    case $options in
+	b ) BUILD_VERSION="${OPTARG}.";;
+	* ) echo $usage
+	    exit 1;;
+    esac
+done
 
 cowbuild_package () {
     DIST=$1
@@ -12,10 +23,10 @@ cowbuild_package () {
     LOCAL=$3
 
     git reset --hard
-    rm -f "../${SOURCE}_${BASE_VERSION}*"
+    rm -f "../${SOURCE}_${BASE_VERSION}-*"
     dch --vendor=$VENDOR --local=$LOCAL ""
     dch --vendor=$VENDOR --distribution=$DIST --release ""
-    debuild -i -us -uc -sa -S
+    debuild -i -us -uc -sa -S --lintian-opts -X chng
     FULL_VERSION=$(dpkg-parsechangelog | sed -n 's/^Version: //p')
     DSC_FILE="../${SOURCE}_${FULL_VERSION}.dsc"
     if [[ $PKG_ARCH =~ "amd64" ]] || [[ $PKG_ARCH =~ "all" ]] || [[ $PKG_ARCH =~ "any" ]] ; then
@@ -41,13 +52,13 @@ if [ $? -ne 0 ]; then
 fi
 
 # Build for stretch..
-cowbuild_package stable Debian "~lunarg"
+cowbuild_package stable Debian "~lunarg${BUILD_VERSION}"
 
 # Build for bionic..
-cowbuild_package bionic Ubuntu "bionic~lunarg"
+cowbuild_package bionic Ubuntu "bionic~lunarg${BUILD_VERSION}"
 
 # Build for xenial..
-cowbuild_package xenial Ubuntu "xenial~lunarg"
+cowbuild_package xenial Ubuntu "xenial~lunarg${BUILD_VERSION}"
 
 # Build for jessie..
 #cowbuild_package oldstable Debian "jessie~lunarg"

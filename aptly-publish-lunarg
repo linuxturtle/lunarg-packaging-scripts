@@ -1,16 +1,17 @@
 #!/bin/bash
-usage="$0 [-p <prefix>] -r|-s"
+usage="$0 [-p <prefix>] [-s <snap_prefix>]"
 PType="repo"
 Prefix="testing"
 UpdateArg="update"
 
 source $(dirname $(readlink -f $0))/.common-lunarg.sh
 
-while getopts ":p:s" options; do
+while getopts ":p:s:" options; do
     case $options in
 	p ) Prefix=$OPTARG;;
 	s ) PType="snapshot"
-	    UpdateArg="switch";;
+	    UpdateArg="switch"
+	    SPrefix=$OPTARG;;
 	* ) echo $usage
 	    exit 1;;
     esac
@@ -19,7 +20,7 @@ done
 for Distro in "${LunarGDistros[@]}";
 do
     if [ "${PType}" == "snapshot" ]; then
-        Snapshot=${Distro}_${Prefix}
+        Snapshot=${Distro}_${SPrefix:-$Prefix}
     fi
     # Update if it's already published
     if aptly publish -raw=true list 2> /dev/null | grep -q -e "^vulkan/${Prefix} ${Distro}$"; then
