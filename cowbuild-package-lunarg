@@ -1,6 +1,4 @@
 #!/bin/bash
-# Sign with lunarg key
-DEBUILD_DPKG_BUILDPACKAGE_OPTS="-k 'brett@lunarg.com'"
 
 SOURCE=$(dpkg-parsechangelog | sed -n 's/^Source: //p')
 BASE_VERSION=$(dpkg-parsechangelog | sed -n 's/^Version: //p' | sed -n 's/-.*$//p')
