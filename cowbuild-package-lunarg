@@ -1,10 +1,4 @@
 #!/bin/bash
-
-SOURCE=$(dpkg-parsechangelog | sed -n 's/^Source: //p')
-BASE_VERSION=$(dpkg-parsechangelog | sed -n 's/^Version: //p' | sed -n 's/-.*$//p')
-PKG_ARCH=$(sed -n 's/^Architecture: //p' debian/control)
-BUILD_VERSION="0."
-
 usage="$0 [-b <build version>]"
 
 while getopts ":b:" options; do
@@ -15,10 +9,16 @@ while getopts ":b:" options; do
     esac
 done
 
+SOURCE=$(dpkg-parsechangelog | sed -n 's/^Source: //p')
+BASE_VERSION=$(dpkg-parsechangelog | sed -n 's/^Version: //p' | sed -n 's/-.*$//p')
+PKG_ARCH=$(sed -n 's/^Architecture: //p' debian/control)
+BUILD_VERSION="0."
+
 cowbuild_package () {
     DIST=$1
     VENDOR=$2
     LOCAL=$3
+    OPTS=${4:-""}
 
     git reset --hard
     rm -f "../${SOURCE}_${BASE_VERSION}-*"
@@ -31,7 +31,7 @@ cowbuild_package () {
 	echo "#########################################################"
 	echo "Building amd64 $DIST packages.."
 	echo "#########################################################"
-	sudo DIST=$DIST ARCH=amd64 cowbuilder --pkgname-logfile --build $DSC_FILE
+	sudo DIST=$DIST ARCH=amd64 cowbuilder --pkgname-logfile --build $OPTS $DSC_FILE
     fi
 #    if [[ $PKG_ARCH =~ "i386" ]] || [[ $PKG_ARCH =~ "any" ]] ; then
 #	echo "#########################################################"
@@ -49,19 +49,10 @@ if [ $? -ne 0 ]; then
     debian/rules gentarball
 fi
 
-# Build for stretch..
-cowbuild_package stable Debian "~lunarg${BUILD_VERSION}"
-
-# Build for bionic..
-cowbuild_package bionic Ubuntu "bionic~lunarg${BUILD_VERSION}"
-
-# Build for xenial..
-cowbuild_package xenial Ubuntu "xenial~lunarg${BUILD_VERSION}"
-
-# Build for jessie..
-#cowbuild_package oldstable Debian "jessie~lunarg"
-
-# Build for trusty..
-#cowbuild_package trusty Ubuntu "trusty~lunarg"
-
-
+source $(dirname $(readlink -f $0))/.common-lunarg.sh
+for Distro in "${LunarGDistros[@]}";
+do
+    cowbuild_package ${Distro} ${DistroVendor[${Distro}]} \
+                     "${DistroLocalSuffix[${Distro}]}${BUILD_VERSION}" \
+                     "${DistroPbuilderOpts[${Distro}]}"
+done

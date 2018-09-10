@@ -1,5 +1,5 @@
 #!/bin/bash
-usage="$0 [-p <prefix>] [-s <snap_prefix>]"
+usage="$0 [-p <prefix>] [-s <snapshot_prefix>]"
 PType="repo"
 Prefix="testing"
 UpdateArg="update"
