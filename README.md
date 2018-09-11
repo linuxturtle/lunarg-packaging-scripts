@@ -71,8 +71,11 @@ with `-h` or `-?` args for usage help.
 
     **_Usage:_** &nbsp; `aptly-publish-lunarg [-p <prefix>] [-s <snapshot_prefix>]`
 
-    This script publishes either a snapshot, or the base repo into the "rootDir"
-    defined in `~/.aptly.conf`.  By default, publishes base LunarG repositories
-    to `${rootDir}/testing`.  The publish prefix can be overwritten with the
-    "-p" option, and publishing a snapshot may be accomplished with the "-s"
-    option.
+    This script publishes either a set of LunarG snapshots, or the base LunarG
+    repos, depending on the arguments it's passed.  The default `<prefix>` is
+    "testing", and so the script publishes the base LunarG repositories to
+    `${rootDir}/vulkan/testing` (where `${rootDir}` is defined in
+    `~/.aptly.conf` by default.  The publish prefix can be overwritten with the
+    `-p` option, and publishing a snapshot may be accomplished with the `-s`
+    option.  Usually, these two options are used together to publish a release
+    snapshot.
