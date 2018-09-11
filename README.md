@@ -18,7 +18,7 @@ with `-h` or `-?` args for usage help.
 
 - **`cowbuild-package-lunarg`**
 
-    ** *Usage:* ** &nbsp; `cowbuild-package-lunarg [-b <build version>]`
+    **_Usage:_** &nbsp; `cowbuild-package-lunarg [-b <build version>]`
 
     This script takes one optional argument of a build version number that will
     be appended to the end of the package version.  It makes the following
@@ -61,7 +61,7 @@ with `-h` or `-?` args for usage help.
 
 - **`aptly-snapshot-lunarg`**
 
-    ** *Usage:* ** &nbsp; `aptly-snapshot-lunarg <prefix>`
+    **_Usage:_** &nbsp; `aptly-snapshot-lunarg <prefix>`
 
     This script takes a uniquely named immutable snapshot of all the appropriate
     aptly repos.  The snapshot name must be the only argument to this script,
@@ -69,7 +69,7 @@ with `-h` or `-?` args for usage help.
 
 - **`aptly-publish-lunarg`**
 
-    ** *Usage:* ** &nbsp; `aptly-publish-lunarg [-p <prefix>] [-s <snapshot_prefix>]`
+    **_Usage:_** &nbsp; `aptly-publish-lunarg [-p <prefix>] [-s <snapshot_prefix>]`
 
     This script publishes either a snapshot, or the base repo into the "rootDir"
     defined in `~/.aptly.conf`.  By default, publishes base LunarG repositories
