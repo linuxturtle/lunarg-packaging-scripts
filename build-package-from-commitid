@@ -1,0 +1,86 @@
+#!/bin/bash
+usage="Usage: $(basename $0) -c <COMMIT_ID> [-b <BUILD_VERSION>] [-s BUILD_SUFFIX] [-d <DEBIAN_PACKAGING_VERSION>]"
+
+commitID=""
+buildVers="1"
+debVers="1"
+buildSuffix="~autobuild"
+while getopts ":c:b:d:s:" options; do
+    case $options in
+	c ) commitID="${OPTARG}";;
+	b ) buildVers="${OPTARG}";;
+	d ) debVers="${OPTARG}";;
+	s ) buildSuffix="${OPTARG}";;
+	* ) echo $usage
+	    exit 1;;
+    esac
+done
+
+if [ -z "$commitID" ]; then
+    echo $usage
+    exit 1
+fi
+
+git reset --hard
+git clean -f
+git checkout -B build
+git reset --hard ${commitID}
+git checkout debian-unstable -- debian
+git commit -m "prepare for automated package build"
+git merge debian-unstable -s ours -m "merge debian-unstable for automated package build"
+
+echo "====================================="
+pkgsrc=$(dpkg-parsechangelog | sed -n 's/^Source: //p')
+echo "Source: $pkgsrc"
+changelogVersion=$(dpkg-parsechangelog | sed -n 's/^Version: //p')
+echo "Changelog Version: $changelogVersion"
+lastRelease=$(git describe --long --tags --match "${pkgsrc}_*" | sed -n "s/^${pkgsrc}_//p")
+# Remove git commit hash from the end and discard
+lastRelease=${lastRelease%-*}
+# Reverse any ~ substitutions
+lastRelease=${lastRelease/"@t@"/"~"}
+echo "Nearest Release: $lastRelease"
+upstreamTag=$(git describe --long --tags | sed -n "s/^[^0-9]*//p")
+upstreamTag=${upstreamTag%-*}
+echo "Nearest Tag: $upstreamTag"
+echo "====================================="
+
+# Grab the base upstream version (everything to the left of the first "-")
+lrBase=${lastRelease%%-*}
+clBase=${changelogVersion%%-*}
+usBase=${upstreamTag%%-*}
+
+# Grab the debian packaging version
+lrDeb=$(expr match "$lastRelease" '^.\+-\([0-9]\+\)_.*')
+clDeb=$(expr match "$changelogVersion" '^.\+-\([0-9]\+\)')
+
+# Extract number of git commits since tag
+lrGitCommits=$(expr match "$lastRelease" '.*-\([0-9]\+\)')
+usGitCommits=$(expr match "$upstreamTag" '.*-\([0-9]\+$\)')
+
+# Pull out the build number from latest release tag.
+lrBuild=$(expr match "$lastRelease" '^.\+_\([0-9]\+\).*')
+
+# The latest build/release tag and changelog should match.
+if $(dpkg --compare-versions "${clBase}-${clDeb}" ne "${lrBase}-${lrDeb}"); then
+    echo "WARNING: Changelog and latest release tag do not match"
+fi
+
+lrVersion="${lrBase}+${lrGitCommits}-${debVers}"
+usVersion="${usBase}+${usGitCommits}-${debVers}"
+
+if [[ ! -z "$upstreamTag" ]] && $(dpkg --compare-versions "${usVersion}" gt "${lrVersion}"); then
+    newVersion=${usVersion}
+    echo "    ATTENTION: Versioning based on newer upstream tag rather than previous release."
+else
+    newVersion=${lrVersion}
+fi
+echo "Building Package Version: $newVersion"
+
+# Update changelog:
+dch -r --distribution=unstable ""
+dch --newversion ${newVersion} "Automated package build"
+git add debian/changelog
+git commit -m "Update changelog for automated package build"
+
+cowbuild-package-lunarg -b "${buildVers}" -s "${buildSuffix}"

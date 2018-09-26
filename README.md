@@ -16,13 +16,54 @@ with `-h` or `-?` args for usage help.
 
     Common variables used by all the following scripts.
 
+- **`build-package-from-commitid`**
+
+    **_Usage:_** &nbsp; `build-package-from-commitid -c <COMMIT_ID> [-b <BUILD VERSION>][-d <DEBIAN PACKAGING VERSION>][-l <LOCAL VERSION>]`
+
+    This script requires a commit ID argument (`-c`) in the form of a SHA sum,
+    tag name, or branch name).  It then checks out the given commit, and uses it
+    as a base to build debian packages from.  The other arguments are optional:
+    
+    - `-b BUILD_VERSION`: This allows you to specify a build version, if the
+      same package version is built multiple times.  _Default: `1`_
+
+    - `-s BUILD_SUFFIX`: String appended to the end of the version string,
+      immediately prior to BUILD_VERSION. Often useful when building the same
+      package for different purposes.  e.g. could be "~ci" for a CI build,
+      or "test" for a testing build.  _Default: `"~autobuild"`_
+
+    - `d DEBIAN_PACKAGING_VERSION`: This normally won't be used, but allows you
+      to specify a debian packaging version other than `1` if that's needed.
+      _Default: `1`_
+
+    The script makes the following assumptions:
+
+    - It assumes it's invoked from inside an updated/current git clone of the
+      repository which the package is built from
+    - It assumes there is a "debian-unstable" branch in the git repository which
+      contains the latest, working debian packaging from the last release build.
+    - It assumes the repository is tagged upstream using some sort of versioning
+      scheme, and that the previous release build in the repository was tagged
+      in the following form:
+
+      `<source package name>_<upstream version>-<debian version>_<build version>`
+    - It assumes that the latest `debian/changelog` entry corresponds to (and
+      has the same version string as) the previously mentioned release build tag.
+
 - **`cowbuild-package-lunarg`**
 
-    **_Usage:_** &nbsp; `cowbuild-package-lunarg [-b <build version>]`
+    **_Usage:_** &nbsp; `cowbuild-package-lunarg [-b BUILD_VERSION] [-s BUILD_SUFFIX] [-t]`
 
-    This script takes one optional argument of a build version number that will
-    be appended to the end of the package version.  It makes the following
-    hard-coded assumptions:
+    - `-b BUILD_VERSION` Number which will be appended to the end of the package
+      version string. _Default: `"1"`_
+    - `-s BUILD_SUFFIX`: String appended to the end of the version string,
+      immediately prior to BUILD_VERSION. Often useful when building the same
+      package for different purposes.  e.g. could be "~ci" for a CI build,
+      or "~lunarg" for a release build.  _Default: `""`_
+    - `-t` indicates that the script should create an annotated tag marking this
+      as a release build.
+    
+    The script makes the following hard-coded assumptions:
 
     - It must be executed inside the target package source directory.
     - It expects the source to be in a git working directory, and be in a clean state.

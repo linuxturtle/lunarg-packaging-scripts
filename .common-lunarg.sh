@@ -7,9 +7,9 @@ declare -A DistroVendor=(
     [stretch]="Debian"
   )
 declare -A DistroLocalSuffix=( 
-    [bionic]="bionic~lunarg"
-    [xenial]="xenial~lunarg"
-    [stretch]="~lunarg"
+    [bionic]="bionic"
+    [xenial]="xenial"
+    [stretch]=""
   )
 declare -A DistroPbuilderOpts=(
     [xenial]="--extrapackages pkg-create-dbgsym"
