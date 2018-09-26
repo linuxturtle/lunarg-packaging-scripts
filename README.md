@@ -18,20 +18,20 @@ with `-h` or `-?` args for usage help.
 
 - **`build-package-from-commitid`**
 
-    **_Usage:_** &nbsp; `build-package-from-commitid -c <COMMIT_ID> [-b <BUILD VERSION>][-d <DEBIAN PACKAGING VERSION>][-l <LOCAL VERSION>]`
-
-    This script requires a commit ID argument (`-c`) in the form of a SHA sum,
-    tag name, or branch name).  It then checks out the given commit, and uses it
-    as a base to build debian packages from.  The other arguments are optional:
+    This script checks out the commit given in the `-c` argument, and uses it as
+    a base to build debian packages from.  The other arguments are optional:
     
+    **_Usage:_** &nbsp; `build-package-from-commitid -c COMMIT_ID [-b BUILD_VERSION][-d DEBIAN_PACKAGING_VERSION][-s BUILD_SUFFIX]`
+
+    - `-c COMMIT_ID` _REQUIRED_: This is the git commit ID you want to build
+      the package from. It can be in the form of a SHA hash, tag name, branch
+      name, etc...
     - `-b BUILD_VERSION`: This allows you to specify a build version, if the
       same package version is built multiple times.  _Default: `1`_
-
     - `-s BUILD_SUFFIX`: String appended to the end of the version string,
       immediately prior to BUILD_VERSION. Often useful when building the same
       package for different purposes.  e.g. could be "~ci" for a CI build,
       or "test" for a testing build.  _Default: `"~autobuild"`_
-
     - `d DEBIAN_PACKAGING_VERSION`: This normally won't be used, but allows you
       to specify a debian packaging version other than `1` if that's needed.
       _Default: `1`_
