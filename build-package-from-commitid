@@ -69,24 +69,24 @@ if [ ! -z "$newVersion" ]; then
     echo "Building Package Version: $newVersion"
 
     # Update changelog:
-    dch -r --distribution=unstable ""
-    dch --newversion "${newVersion}-${debVers}" "Automated package build"
+    cimsg="Automated package build"
+    if [ "$interactive" ]; then
+	cimsg=$(zenity --entry \
+	--title="update debian/changelog" \
+	--text="Enter a comment for the changelog" \
+	--entry-text="$cimsg")
+    fi
+    if [ ! -z "$cimsg" ]; then
+	dch -r --distribution=unstable ""
+	dch --newversion "${newVersion}-${debVers}" "$cimsg"
+    else
+	exit 1
+    fi
 
+    # Commit changelog and kick off a build..
     if [ -z "$noBuild" ]; then
-	cimsg="Update changelog for automated package build"
-	if [ "$interactive" ]; then
-	    cimsg = zenity --entry \
-	    --title="update debian/changelog" \
-	    --text="Enter a comment for this commit" \
-	    --entry-text="$cimsg"
-	fi
-	if [ ! -z "$cimsg" ]; then
-	    git add debian/changelog
-	    git commit -m "$cimsg"
-	else
-	    exit 1
-	fi
-
+	git add debian/changelog
+	git commit -m "$cimsg"
 	cowbuild-package-lunarg -b "${buildNum}" -s "${buildSuffix}"
     fi
 fi
