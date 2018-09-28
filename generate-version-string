@@ -1,6 +1,17 @@
 #!/bin/bash
 errecho () { echo $@ > /dev/stderr; }
 
+usage="Usage: $(basename $0) [-v]"
+
+verbose=""
+while getopts ":v" options; do
+    case $options in
+	v ) verbose="TRUE";;
+	* ) echo $usage
+	    exit 1;;
+    esac
+done
+
 pkgsrc=$(dpkg-parsechangelog | sed -n 's/^Source: //p')
 changelogVersion=$(dpkg-parsechangelog | sed -n 's/^Version: //p')
 lastReleaseTag=$(git describe --abbrev=0 --tags --match "${pkgsrc}_*")
@@ -31,6 +42,11 @@ fi
 
 lrVersion="${lrBase}+${lrGitCommits}"
 usVersion="${usBase}+${usGitCommits}"
+if [ "$verbose" ]; then
+    errecho "Version strings based on:"
+    errecho "    Latest release tag: ${lrVersion}"
+    errecho "    Latest upstream tag: ${usVersion}"
+fi
 
 if [[ ! -z "$upstreamTag" ]] && $(dpkg --compare-versions "${usVersion}" gt "${lrVersion}"); then
     errecho "NOTE: Version based on newer upstream tag detected since last release (${lrVersion})"
@@ -39,5 +55,3 @@ else
     errecho "NOTE: Version based on last release tag (${lastRelease%-*})"
     echo ${lrVersion}
 fi
-
-

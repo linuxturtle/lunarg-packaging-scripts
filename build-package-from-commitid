@@ -32,7 +32,7 @@ git clean -f
 git checkout -B ${tempBranch}
 git reset --hard ${commitID}
 git checkout debian-unstable -- debian
-cimsg="merge debian packaging for automated package build"
+cimsg="merge debian packaging"
 if [ "$interactive" ]; then
     cimsg=$(zenity --entry \
     --title="Add Debian packaging" \
@@ -57,7 +57,7 @@ else
     exit 1
 fi
 
-newVersion="$($(dirname $(readlink -f $0))/generate-version-string)"
+newVersion="$($(dirname $(readlink -f $0))/generate-version-string -v)"
 
 if [ "$interactive" ]; then
     newVersion=$(zenity --entry \
