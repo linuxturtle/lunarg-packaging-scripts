@@ -18,16 +18,28 @@ with `-h` or `-?` args for usage help.
 
 - **`build-package-from-commitid`**
 
-    This script checks out the commit given in the `-c` argument, and uses it as
-    a base to build debian packages from.  The other arguments are optional:
+    This script checks out the commit given in the `-c` argument into the branch
+    specified by `-t`, merges debian packaging from the `debian-unstable`
+    branch, constructs an appropriate package version string from the existing
+    changelog and any release tags and other optional arguments, and uses all of
+    the above to kick off a cowbuilder build of the packages in question.
     
-    **_Usage:_** &nbsp; `build-package-from-commitid -c COMMIT_ID [-b BUILD_VERSION][-d DEBIAN_PACKAGING_VERSION][-s BUILD_SUFFIX]`
+    **_Usage:_** &nbsp; `build-package-from-commitid -c COMMIT_ID [-n] [-b BUILD_NUMBER] [-t TEMP_BRANCH] [-d DEBIAN_PACKAGING_VERSION] [-s BUILD_SUFFIX]`
 
     - `-c COMMIT_ID` _REQUIRED_: This is the git commit ID you want to build
       the package from. It can be in the form of a SHA hash, tag name, branch
       name, etc...
-    - `-b BUILD_VERSION`: This allows you to specify a build version, if the
-      same package version is built multiple times.  _Default: `1`_
+    - `-i`: Interactive. Before before any git commits, and before the version
+      string is embedded into the changelog, interactively allow the user to
+      modify comments or the package version string.
+    - `-n`: No Build.  Perform all of the steps up until the last changelog
+      commit and build, then exit, leaving the temp branch with a modified (but
+      not commited) changelog.
+    - `-b BUILD_NUMBER`: This allows you to specify a build number, if the
+      same package commit is built multiple times.  _Default: `1`_
+    - `-t TEMP_BRANCH`: This is the git branch upon which all of the checkout,
+      merging, and commits done by this script will be performed.  _Default:
+      `"build"`_
     - `-s BUILD_SUFFIX`: String appended to the end of the version string,
       immediately prior to BUILD_VERSION. Often useful when building the same
       package for different purposes.  e.g. could be "~ci" for a CI build,

@@ -1,0 +1,46 @@
+#!/bin/bash
+errecho () { echo $@ > /dev/stderr; }
+
+pkgsrc=$(dpkg-parsechangelog | sed -n 's/^Source: //p')
+changelogVersion=$(dpkg-parsechangelog | sed -n 's/^Version: //p')
+lastRelease=$(git describe --long --tags --match "${pkgsrc}_*" | sed -n "s/^${pkgsrc}_//p")
+# Remove git commit hash from the end and discard
+lastRelease=${lastRelease%-*}
+# Reverse any ~ substitutions
+lastRelease=${lastRelease/"@t@"/"~"}
+upstreamTag=$(git describe --long --tags | sed -n "s/^[^0-9]*//p")
+upstreamTag=${upstreamTag%-*}
+
+# Grab the base upstream version (everything to the left of the first "-")
+lrBase=${lastRelease%%-*}
+clBase=${changelogVersion%%-*}
+usBase=${upstreamTag%%-*}
+
+# Grab the debian packaging version
+lrDeb=$(expr match "$lastRelease" '^.\+-\([0-9]\+\)_.*')
+clDeb=$(expr match "$changelogVersion" '^.\+-\([0-9]\+\)')
+
+# Extract number of git commits since tag
+lrGitCommits=$(expr match "$lastRelease" '.*-\([0-9]\+\)')
+usGitCommits=$(expr match "$upstreamTag" '.*-\([0-9]\+$\)')
+
+# Pull out the build number from latest release tag.
+lrBuild=$(expr match "$lastRelease" '^.\+_\([0-9]\+\).*')
+
+# The latest build/release tag and changelog should match.
+if $(dpkg --compare-versions "${clBase}-${clDeb}" ne "${lrBase}-${lrDeb}"); then
+    errecho "WARNING: Changelog and latest release tag do not match"
+fi
+
+lrVersion="${lrBase}+${lrGitCommits}"
+usVersion="${usBase}+${usGitCommits}"
+
+if [[ ! -z "$upstreamTag" ]] && $(dpkg --compare-versions "${usVersion}" gt "${lrVersion}-${lrDeb}"); then
+    errecho "NOTE: Version based on newer upstream tag detected since last release (${lrVersion})"
+    echo ${usVersion}
+else
+    errecho "NOTE: Version based on last release tag (${lastRelease%-*})"
+    echo ${lrVersion}
+fi
+
+

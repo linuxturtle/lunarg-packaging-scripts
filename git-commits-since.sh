@@ -1,13 +1,15 @@
 #!/bin/bash
-usage="$0 [-c <commitID/tag/branch>]"
+usage="$0 [-c <commitID/tag/branch>] [-i <branch to ignore> ]"
 
 commitID=""
-while getopts ":c:" options; do
+ignoreBranch=""
+while getopts ":c:i:" options; do
     case $options in
 	c ) commitID="${OPTARG}..";;
+	i ) ignoreBranch="^${OPTARG}";;
 	* ) echo $usage
 	    exit 1;;
     esac
 done
 
-git log --oneline ${commitID}HEAD | wc -l
+git rev-list ${commitID}HEAD ${ignoreBranch} --count
