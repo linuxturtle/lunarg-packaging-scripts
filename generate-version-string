@@ -1,11 +1,14 @@
 #!/bin/bash
 errecho () { echo $@ > /dev/stderr; }
 
-usage="Usage: $(basename $0) [-v]"
+usage="Usage: $(basename $0) [-v] [-g GIT_OPTS]"
 
+gitCmd="git"
 verbose=""
-while getopts ":v" options; do
+
+while getopts ":g:v" options; do
     case $options in
+	g ) gitCmd="git ${OPTARG}";;
 	v ) verbose="TRUE";;
 	* ) echo $usage
 	    exit 1;;
@@ -14,12 +17,21 @@ done
 
 pkgsrc=$(dpkg-parsechangelog | sed -n 's/^Source: //p')
 changelogVersion=$(dpkg-parsechangelog | sed -n 's/^Version: //p')
-lastReleaseTag=$(git describe --abbrev=0 --tags --match "${pkgsrc}_*")
+lastReleaseTag=$(${gitCmd} describe --abbrev=0 --tags --match "${pkgsrc}_*")
+lrGitCommits=$(${gitCmd} rev-list ${lastReleaseTag}..HEAD ^debian-unstable --count)
 lastRelease=${lastReleaseTag/#${pkgsrc}_/}
-lrGitCommits=$(git rev-list ${lastReleaseTag}..HEAD ^debian-unstable --count)
-upstreamTag=$(git describe --abbrev=0 --tags)
+
+if [ -e update_shaderc_sources.py ]; then
+    # I'm shaderc, and I'm special...
+    [ $(command -v jq) ] || ( echo "$0 needs the 'jq' program: \"apt-get install jq\""; exit 1 )
+    shadercCommit=$(jq -r '.commits[] | select(.name == "shaderc").commit' known_good.json)
+    upstreamTag=$(${gitCmd} describe --abbrev=0 --tags  --exclude "${pkgsrc}_*" ${shadercCommit})
+    usGitCommits=$(${gitCmd} rev-list ${upstreamTag}..${shadercCommit} ^debian-unstable --count)
+else
+    upstreamTag=$(${gitCmd} describe --abbrev=0 --tags  --exclude "${pkgsrc}_*")
+    usGitCommits=$(${gitCmd} rev-list ${upstreamTag}..HEAD ^debian-unstable --count)
+fi
 usBase=$(expr match "$upstreamTag" '^[^0-9]*\(.*$\)')
-usGitCommits=$(git rev-list ${upstreamTag}..HEAD ^debian-unstable --count)
 
 # Reverse any ~ substitutions
 lastRelease=${lastRelease/"@t@"/"~"}

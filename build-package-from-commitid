@@ -8,11 +8,13 @@ buildSuffix="~autobuild"
 tempBranch="build"
 interactive=""
 noBuild=""
+shaderc=""
+
 while getopts ":c:b:t:s:d:in" options; do
     case $options in
 	c ) commitID="${OPTARG}";;
 	b ) buildNum="${OPTARG}";;
-	t ) tempBranch="${OPTARG}";;
+	r ) tempBranch="${OPTARG}";;
 	s ) buildSuffix="${OPTARG}";;
 	d ) debVers="${OPTARG}";;
 	i ) interactive="TRUE";;
@@ -29,8 +31,19 @@ fi
 
 git reset --hard
 git clean -f
-git checkout -B ${tempBranch}
+git checkout -B upstream-unstable
 git reset --hard ${commitID}
+# I'm shaderc, and I'm special...
+if [ -e update_shaderc_sources.py ]; then
+    # Check out actual shaderc source, along with other dependencies
+    rm -fr src
+    ./update_shaderc_sources.py
+    find src -name .git | xargs rm -fr
+    git add src
+    git ci -m "Update shaderc upstream sources"
+fi
+
+git checkout -B ${tempBranch}
 git checkout debian-unstable -- debian
 cimsg="merge debian packaging"
 if [ "$interactive" ]; then
@@ -67,7 +80,6 @@ if [ "$interactive" ]; then
 fi
 if [ ! -z "$newVersion" ]; then
     echo "Building Package Version: $newVersion"
-
     # Update changelog:
     cimsg="Automated package build"
     if [ "$interactive" ]; then

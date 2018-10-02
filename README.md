@@ -16,6 +16,32 @@ with `-h` or `-?` args for usage help.
 
     Common variables used by all the following scripts.
 
+- **`generate-version-string`**
+
+    This is a utility script which attempts to generate (and returns) a
+    descriptive package version string based on what it finds in the changelog,
+    the nearest release git tags, and upstream git tags.
+
+    **_Usage:_** &nbsp; `generate-version-string [-v] [-g GIT_OPTS]`
+
+    - `-v`: Verbose.  Outputs diagnostic information and alternate version
+      strings to stderr (to help if you don't like the one it returns).
+    - `-g GIT_OPTS`: This must be a single-quoted string, which will be passed
+      to the `git` executable as parameter(s).  Useful for modifying where git
+      looks for tags, etc...
+
+- **`tag-release-build`**
+
+    This script is used to create an annotated tag the git repository in a form
+    which the `build-package-from-commitid` script recognizes as a release tag.
+
+    **_Usage:_** &nbsp; `tag-release-build [-b BUILD_VERSION] [-m TAG_MESSAGE]`
+
+    - `-b BUILD_VERSION`: This allows you to specify a build number, if the
+      same package commit is built multiple times.  _Default: `1`_
+    - `-m TAG_MESSAGE`: Message passed to git as the annotation on the tag.  If
+      this parameter is not passed, git will interactively ask for a message.
+
 - **`build-package-from-commitid`**
 
     This script checks out the commit given in the `-c` argument into the branch
@@ -24,7 +50,7 @@ with `-h` or `-?` args for usage help.
     changelog and any release tags and other optional arguments, and uses all of
     the above to kick off a cowbuilder build of the packages in question.
     
-    **_Usage:_** &nbsp; `build-package-from-commitid -c COMMIT_ID [-n] [-b BUILD_NUMBER] [-t TEMP_BRANCH] [-d DEBIAN_PACKAGING_VERSION] [-s BUILD_SUFFIX]`
+    **_Usage:_** &nbsp; `build-package-from-commitid -c COMMIT_ID [-i] [-n] [-b BUILD_NUMBER] [-t TEMP_BRANCH] [-s BUILD_SUFFIX] [-d DEBIAN_PACKAGING_VERSION]`
 
     - `-c COMMIT_ID` _REQUIRED_: This is the git commit ID you want to build
       the package from. It can be in the form of a SHA hash, tag name, branch
@@ -64,7 +90,7 @@ with `-h` or `-?` args for usage help.
 
 - **`cowbuild-package-lunarg`**
 
-    **_Usage:_** &nbsp; `cowbuild-package-lunarg [-b BUILD_VERSION] [-s BUILD_SUFFIX] [-t]`
+    **_Usage:_** &nbsp; `cowbuild-package-lunarg [-b BUILD_VERSION] [-s BUILD_SUFFIX]`
 
     - `-b BUILD_VERSION` Number which will be appended to the end of the package
       version string. _Default: `"1"`_
@@ -72,8 +98,6 @@ with `-h` or `-?` args for usage help.
       immediately prior to BUILD_VERSION. Often useful when building the same
       package for different purposes.  e.g. could be "~ci" for a CI build,
       or "~lunarg" for a release build.  _Default: `""`_
-    - `-t` indicates that the script should create an annotated tag marking this
-      as a release build.
     
     The script makes the following hard-coded assumptions:
 

@@ -28,15 +28,14 @@ cowbuild_package () {
 #    fi
 }
 
-usage="$0 [-b <BUILD VERSION>] [-s <LOCAL SUFFIX>] [-t]"
+usage="$0 [-b <BUILD VERSION>] [-s <LOCAL SUFFIX>]"
 BUILD_VERSION="1."
 BUILD_SUFFIX="~lunarg"
 
-while getopts ":b:s:t" options; do
+while getopts ":b:s:" options; do
     case $options in
 	b ) BUILD_VERSION="${OPTARG}.";;
 	s ) BUILD_SUFFIX="${OPTARG}";;
-	t ) TAG_REPO=TRUE;;
 	* ) echo $usage
 	    exit 1;;
     esac
@@ -44,14 +43,7 @@ done
 
 SOURCE=$(dpkg-parsechangelog | sed -n 's/^Source: //p')
 BASE_VERSION=$(dpkg-parsechangelog | sed -n 's/^Version: //p' | sed -n 's/-.*$//p')
-DEB_VERSION=$(dpkg-parsechangelog | sed -n 's/^Version: //p')
 PKG_ARCH=$(sed -n 's/^Architecture: //p' debian/control)
-if [ ${TAG_REPO:-""} ]; then
-    TAG_STR="${SOURCE}_${DEB_VERSION}_${BUILD_VERSION}1"
-    # Substitute tilde character (not valid in tags)
-    TAG_STR=${TAG_STR/"~"/"@t@"}
-    git tag ${TAG_STR}
-fi
 
 # Check all the normal sources for an orig tarball before generating a new one
 # (which likely will have a different hash than a pre-existing original)

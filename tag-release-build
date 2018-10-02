@@ -1,0 +1,28 @@
+#!/bin/bash
+usage="Usage: $(basename $0) [-b BUILD_VERSION] [-m TAG_MESSAGE]"
+
+BUILD_VERSION="1"
+TAG_MESSAGE=""
+while getopts ":b:m:" options; do
+    case $options in
+	b ) BUILD_VERSION="${OPTARG}";;
+	m ) TAG_MESSAGE="$OPTARG";;
+	* ) echo $usage
+	    exit 1;;
+    esac
+done
+
+SOURCE=$(dpkg-parsechangelog | sed -n 's/^Source: //p')
+VERSION=$(dpkg-parsechangelog | sed -n 's/^Version: //p')
+BASE_VERSION=${VERSION%%-*}
+DEB_VERSION=$(expr match "$VERSION" '^.\+-\([0-9]\+\)')
+TAG_STR="${SOURCE}_${BASE_VERSION}-${DEB_VERSION}_${BUILD_VERSION}.1"
+# Substitute tilde character (not valid in tags)
+TAG_STR=${TAG_STR/"~"/"@t@"}
+echo "Tagging with $TAG_STR"
+
+if [ "$TAG_MESSAGE" ]; then
+    git tag -f -a -m "$TAG_MESSAGE" "${TAG_STR}"
+else
+    git tag -f -a "${TAG_STR}"
+fi

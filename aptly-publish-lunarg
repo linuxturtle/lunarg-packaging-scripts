@@ -1,17 +1,19 @@
 #!/bin/bash
-usage="$0 [-p <prefix>] [-s <snapshot_prefix>]"
+usage="$0 [-p <prefix>] [-s <snapshot_prefix>] [-a <aptly_args>]"
 PType="repo"
 Prefix="testing"
 UpdateArg="update"
 
 source $(dirname $(readlink -f $0))/.common-lunarg.sh
 
-while getopts ":p:s:" options; do
+AptlyArgs=""
+while getopts ":p:s:a:" options; do
     case $options in
 	p ) Prefix=$OPTARG;;
 	s ) PType="snapshot"
 	    UpdateArg="switch"
 	    SPrefix=$OPTARG;;
+	a ) AptlyArgs=$OPTARG;;
 	* ) echo $usage
 	    exit 1;;
     esac
@@ -25,12 +27,12 @@ do
     # Update if it's already published
     if aptly publish -raw=true list 2> /dev/null | grep -q -e "^vulkan/${Prefix} ${Distro}$"; then
         echo "*** Publishing update to vulkan/${Prefix} ${Distro}"
-	aptly publish ${UpdateArg} \
+	aptly publish ${UpdateArg} ${AptlyArgs}\
 	    -gpg-key="${LunarGGPGKey}" \
 	    ${Distro} vulkan/${Prefix} ${Snapshot:-}
     else
         echo "*** Publishing to newly created vulkan/${Prefix} ${Distro}"
-	aptly publish ${PType} \
+	aptly publish ${PType} ${AptlyArgs}\
 	    -gpg-key="${LunarGGPGKey}" \
 	    -label="LunarG Vulkan Package ${Distro} Repository"\
 	    -origin="vulkan.lunarg.com"\
