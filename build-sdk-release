@@ -1,0 +1,99 @@
+#!/bin/bash
+
+ReleaseTag="sdk-1.1.85.0"
+JSONFile="SDKs/common/config.json"
+
+Packages=("spirv-headers"
+          "spirv-tools"
+	  "spirv-cross"
+	  "glslang"
+	  "shaderc"
+	  "vulkan-headers"
+	  "vulkan-loader"
+	  "vulkan-validationlayers"
+	  "vulkan-tools"
+	  "lunarg-tools"
+	 )
+declare -A JSONName=(
+    [lunarhub-doc]="LunarHub-Doc"
+    [spirv-headers]="SPIRV-Headers"
+    [spirv-tools]="SPIRV-Tools"
+    [spirv-cross]="SPIRV-Cross"
+    [glslang]="Glslang"
+    [shaderc]="shaderc"
+    [vulkan-headers]="Vulkan-Headers"
+    [vulkan-loader]="Vulkan-Loader"
+    [vulkan-validationlayers]="Vulkan-ValidationLayers"
+    [vulkan-tools]="Dash-Tools"
+    [lunarg-tools]="LunarG-Tools"
+  )
+
+declare -A LocalClone=(
+    [lunarhub-doc]="$HOME/src/vulkan/LunarHub-Doc"
+    [spirv-headers]="$HOME/src/vulkan/SPIRV-Headers"
+    [spirv-tools]="$HOME/src/vulkan/SPIRV-Tools"
+    [spirv-cross]="$HOME/src/vulkan/SPIRV-Cross"
+    [glslang]="$HOME/src/vulkan/glslang"
+    [shaderc]="$HOME/src/vulkan/shaderc"
+    [vulkan-headers]="$HOME/src/vulkan/Vulkan-Headers"
+    [vulkan-loader]="$HOME/src/vulkan/Vulkan-Loader"
+    [vulkan-validationlayers]="$HOME/src/vulkan/Vulkan-ValidationLayers"
+    [vulkan-tools]="$HOME/src/vulkan/Vulkan-Tools"
+    [lunarg-tools]="$HOME/src/vulkan/VulkanTools"
+  )
+declare -A CommitID=(
+    [spirv-headers]="khronos/master"
+    [spirv-tools]="khronos/stable"
+    [spirv-cross]=""
+    [glslang]=""
+    [shaderc]=""
+    [vulkan-headers]=""
+    [vulkan-loader]=""
+    [vulkan-validationlayers]=""
+    [vulkan-tools]=""
+    [lunarg-tools]=""
+  )
+
+# Fill in the commit IDs to build from
+pushd "${LocalClone[lunarhub-doc]}"|| exit "$?"
+git remote update || exit "$?"
+git reset --hard
+git clean -f
+git co ${ReleaseTag} || exit "$?"
+for package in "${Packages[@]}"; do
+    commit=$(jq -r .repos.\"${JSONName[${package}]}\".branch ${JSONFile})
+    if [ "$commit" == "null" ]; then
+	commit=$(jq -r .repos.\"${JSONName[${package}]}\".commit ${JSONFile})
+    fi
+    if [ "$commit" != "null" ]; then
+	CommitID[${package}]=${commit}
+    fi
+done
+popd
+
+# This is fugly, but the tarball build depends on the glslang build to pull in
+# some random version of spirv-headers and spirv-tools, and then copies those
+# build/versions into the SDK.  I guess we should do the same hideous kludge in
+# an even more heinous way, since we're building packages, not just copying
+# directories around. :P
+pushd "${LocalClone[glslang]}"|| exit "$?"
+git remote update || exit "$?"
+git reset --hard
+git clean -f
+git co ${CommitID[glslang]} || exit "$?"
+
+# Find spirv-headers commit
+commit=$(jq -r '.commits[] | select(.name == "spirv-tools/external/spirv-headers").commit' known_good.json)
+[ "$commit" != "null" ] || (echo "Can't find spirv-headers commit"; exit 1)
+CommitID[spirv-headers]=${commit}
+
+# Find spirv-tools commit
+commit=$(jq -r '.commits[] | select(.name == "spirv-tools").commit' known_good.json)
+[ "$commit" != "null" ] || (echo "Can't find spirv-tools commit"; exit 1)
+CommitID[spirv-tools]=${commit}
+popd
+
+# Debugging: remove
+for package in "${Packages[@]}"; do
+    echo "CommitID[${package}]=${CommitID[${package}]}"
+done

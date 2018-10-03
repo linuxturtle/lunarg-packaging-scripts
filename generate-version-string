@@ -52,8 +52,17 @@ if $(dpkg --compare-versions "${clBase}-${clDeb}" ne "${lrBase}-${lrDeb}"); then
     errecho "WARNING: Changelog and latest release tag do not match"
 fi
 
-lrVersion="${lrBase}+${lrGitCommits}"
-usVersion="${usBase}+${usGitCommits}"
+if [ "$lrGitCommits" == "0" ]; then
+    lrVersion="${lrBase}"
+else
+    lrVersion="${lrBase}+${lrGitCommits}"
+fi
+if [ "$usGitCommits" == "0" ]; then
+    usVersion="${usBase}"
+else
+    usVersion="${usBase}+${usGitCommits}"
+fi
+
 if [ "$verbose" ]; then
     errecho "Version strings based on:"
     errecho "    Latest release tag: ${lrVersion}"
