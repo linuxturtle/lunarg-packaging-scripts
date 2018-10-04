@@ -61,8 +61,8 @@ git reset --hard
 git clean -f
 git co ${ReleaseTag} || exit "$?"
 for package in "${Packages[@]}"; do
-    commit=$(jq -r .repos.\"${JSONName[${package}]}\".branch ${JSONFile})
-    if [ "$commit" == "null" ]; then
+    commit="upstream/$(jq -r .repos.\"${JSONName[${package}]}\".branch ${JSONFile})"
+    if [ "$commit" == "upstream/null" ]; then
 	commit=$(jq -r .repos.\"${JSONName[${package}]}\".commit ${JSONFile})
     fi
     if [ "$commit" != "null" ]; then
@@ -73,7 +73,7 @@ popd
 
 # This is fugly, but the tarball build depends on the glslang build to pull in
 # some random version of spirv-headers and spirv-tools, and then copies those
-# build/versions into the SDK.  I guess we should do the same hideous kludge in
+# subdirectories into the SDK.  I guess we should do the same hideous kludge in
 # an even more heinous way, since we're building packages, not just copying
 # directories around. :P
 pushd "${LocalClone[glslang]}"|| exit "$?"
@@ -95,5 +95,20 @@ popd
 
 # Debugging: remove
 for package in "${Packages[@]}"; do
-    echo "CommitID[${package}]=${CommitID[${package}]}"
+    commit=${CommitID[${package}]}
+    echo "######################################"
+    echo "Checking ${package}: CommitID=${commit}]}"
+    pushd "${LocalClone[${package}]}"|| exit "$?"
+    git remote update || exit "$?"
+    updateCount=$(git rev-list upstream-unstable..${commit} --count)
+    if [ "${updateCount}" -gt "0" ]; then
+	echo "-------------------------------------"
+	echo "${updateCount} commits since last build"
+	echo "Building ${package}: CommitID=${commit}]}"
+	git reset --hard
+	git clean -f
+	git co debian-unstable || exit "$?"
+	generate-version-string -v -u ${commit}
+    fi
+    popd
 done
