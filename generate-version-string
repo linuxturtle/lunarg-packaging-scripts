@@ -1,14 +1,18 @@
 #!/bin/bash
 errecho () { echo $@ > /dev/stderr; }
 
-usage="Usage: $(basename $0) [-v] [-g GIT_OPTS]"
+usage="Usage: $(basename $0) [-v] [-g GIT_OPTS] [-u UPSTREAM_COMMIT] [-d DEBIAN_COMMIT]"
 
 gitCmd="git"
+usCommit="upstream-unstable"
+debCommit="debian-unstable"
 verbose=""
 
-while getopts ":g:v" options; do
+while getopts ":g:u:d:v" options; do
     case $options in
 	g ) gitCmd="git ${OPTARG}";;
+	u ) usCommit="${OPTARG}";;
+	d ) debCommit="${OPTARG}";;
 	v ) verbose="TRUE";;
 	* ) echo $usage
 	    exit 1;;
@@ -17,19 +21,19 @@ done
 
 pkgsrc=$(dpkg-parsechangelog | sed -n 's/^Source: //p')
 changelogVersion=$(dpkg-parsechangelog | sed -n 's/^Version: //p')
-lastReleaseTag=$(${gitCmd} describe --abbrev=0 --tags --match "${pkgsrc}_*")
-lrGitCommits=$(${gitCmd} rev-list ${lastReleaseTag}..HEAD ^debian-unstable --count)
-lastRelease=${lastReleaseTag/#${pkgsrc}_/}
+lastReleaseTag=$(${gitCmd} describe --abbrev=0 --tags --match "${pkgsrc}_*" ${debCommit})
+lrGitCommits=$(${gitCmd} rev-list ${lastReleaseTag}..${debCommit} --count)
+lastRelease="${lastReleaseTag##${pkgsrc}_}"
 
 if [ -e update_shaderc_sources.py ]; then
     # I'm shaderc, and I'm special...
     [ $(command -v jq) ] || ( echo "$0 needs the 'jq' program: \"apt-get install jq\""; exit 1 )
     shadercCommit=$(jq -r '.commits[] | select(.name == "shaderc").commit' known_good.json)
     upstreamTag=$(${gitCmd} describe --abbrev=0 --tags  --exclude "${pkgsrc}_*" ${shadercCommit})
-    usGitCommits=$(${gitCmd} rev-list ${upstreamTag}..${shadercCommit} ^debian-unstable --count)
+    usGitCommits=$(${gitCmd} rev-list ${upstreamTag}..${shadercCommit} --count)
 else
-    upstreamTag=$(${gitCmd} describe --abbrev=0 --tags  --exclude "${pkgsrc}_*")
-    usGitCommits=$(${gitCmd} rev-list ${upstreamTag}..HEAD ^debian-unstable --count)
+    upstreamTag=$(${gitCmd} describe --abbrev=0 --tags  --exclude "${pkgsrc}_*" ${usCommit})
+    usGitCommits=$(${gitCmd} rev-list ${upstreamTag}..${usCommit} --count)
 fi
 usBase=$(expr match "$upstreamTag" '^[^0-9]*\(.*$\)')
 
@@ -69,10 +73,13 @@ if [ "$verbose" ]; then
     errecho "    Latest upstream tag: ${usVersion}"
 fi
 
-if [[ ! -z "$upstreamTag" ]] && $(dpkg --compare-versions "${usVersion}" gt "${lrVersion}"); then
-    errecho "NOTE: Version based on newer upstream tag detected since last release (${lrVersion})"
+if [ -z "$upstreamTag" ]; then
+    echo ${lrVersion}
+elif $(dpkg --compare-versions "${usVersion}" ge "${lrVersion}"); then
     echo ${usVersion}
 else
-    errecho "NOTE: Version based on last release tag (${lastRelease%-*})"
+    errecho "################################"
+    errecho "WARNING: Upstream version (${usVersion}) earlier than last release ${lastRelease}"
+    errecho "################################"
     echo ${lrVersion}
 fi
