@@ -1,18 +1,21 @@
 #!/bin/bash
 errecho () { echo $@ > /dev/stderr; }
 
-usage="Usage: $(basename $0) [-v] [-g GIT_OPTS] [-u UPSTREAM_COMMIT] [-d DEBIAN_COMMIT]"
+usage="Usage: $(basename $0) [-v] [-g GIT_OPTS] [-u UPSTREAM_COMMIT] [-l LAST_BUILD_UPSTREAM_COMMIT] [-d DEBIAN_COMMIT]"
 
 gitCmd="git"
 usCommit="upstream-unstable"
 debCommit="debian-unstable"
+lbuGitCommits="0"
+lbuCommit=""
 verbose=""
 
-while getopts ":g:u:d:v" options; do
+while getopts ":g:u:d:l:v" options; do
     case $options in
 	g ) gitCmd="git ${OPTARG}";;
 	u ) usCommit="${OPTARG}";;
 	d ) debCommit="${OPTARG}";;
+	l ) lbuCommit="${OPTARG}";;
 	v ) verbose="TRUE";;
 	* ) echo $usage
 	    exit 1;;
@@ -22,8 +25,12 @@ done
 pkgsrc=$(dpkg-parsechangelog | sed -n 's/^Source: //p')
 changelogVersion=$(dpkg-parsechangelog | sed -n 's/^Version: //p')
 lastReleaseTag=$(${gitCmd} describe --abbrev=0 --tags --match "${pkgsrc}_*" ${debCommit})
-lrGitCommits=$(${gitCmd} rev-list ${lastReleaseTag}..${debCommit} --count)
+debGitCommits=$(${gitCmd} rev-list ${lastReleaseTag}..${debCommit} --count)
+[ "$lbuCommit" ] && lbuGitCommits=$(${gitCmd} rev-list ${lbuCommit}..${usCommit} --count)
 lastRelease="${lastReleaseTag##${pkgsrc}_}"
+# Reverse any ~ substitutions
+lastRelease=${lastRelease/"@t@"/"~"}
+
 
 if [ -e update_shaderc_sources.py ]; then
     # I'm shaderc, and I'm special...
@@ -37,9 +44,6 @@ else
 fi
 usBase=$(expr match "$upstreamTag" '^[^0-9]*\(.*$\)')
 
-# Reverse any ~ substitutions
-lastRelease=${lastRelease/"@t@"/"~"}
-
 # Grab the base upstream version (everything to the left of the first "-")
 lrBase=${lastRelease%%-*}
 clBase=${changelogVersion%%-*}
@@ -51,21 +55,28 @@ clDeb=$(expr match "$changelogVersion" '^.\+-\([0-9]\+\)')
 # Pull out the build number from latest release tag.
 lrBuild=$(expr match "$lastRelease" '^.\+_\([0-9]\+\).*')
 
+# Pull out number of git commits (if any)
+lrGitCommits=$(expr match "$lrBase" '^.\++\([0-9]\+\)$')
+lrUpstream=${lrBase%%+*}
+
 # The latest build/release tag and changelog should match.
 if $(dpkg --compare-versions "${clBase}-${clDeb}" ne "${lrBase}-${lrDeb}"); then
     errecho "WARNING: Changelog and latest release tag do not match"
 fi
 
-if [ "$lrGitCommits" == "0" ]; then
-    lrVersion="${lrBase}"
-else
-    lrVersion="${lrBase}+${lrGitCommits}"
+lrVersion="${lrUpstream}"
+newLRCommits=$(($lrGitCommits + $lbuGitCommits))
+if [ "$newLRCommits" -gt "0" ]; then
+    lrVersion="${lrVersion}+${newLRCommits}"
 fi
-if [ "$usGitCommits" == "0" ]; then
-    usVersion="${usBase}"
-else
-    usVersion="${usBase}+${usGitCommits}"
+[ "$lbuGitCommits" -gt "0" ] && clDeb=$((${clDeb} + 1))
+lrVersion="${lrVersion}-${clDeb}"
+
+usVersion="${usBase}"
+if [ "$usGitCommits" -gt "0" ]; then
+    usVersion="${usVersion}+${usGitCommits}"
 fi
+usVersion="${usVersion}-1"
 
 if [ "$verbose" ]; then
     errecho "Version strings based on:"

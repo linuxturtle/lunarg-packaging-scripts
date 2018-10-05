@@ -93,22 +93,28 @@ commit=$(jq -r '.commits[] | select(.name == "spirv-tools").commit' known_good.j
 CommitID[spirv-tools]=${commit}
 popd
 
-# Debugging: remove
+# Check each package to see if we've previously built the same commit, kick off
+# a build if not.
 for package in "${Packages[@]}"; do
     commit=${CommitID[${package}]}
     echo "######################################"
     echo "Checking ${package}: CommitID=${commit}]}"
     pushd "${LocalClone[${package}]}"|| exit "$?"
     git remote update || exit "$?"
-    updateCount=$(git rev-list upstream-unstable..${commit} --count)
+    git reset --hard
+    git clean -f
+    git co debian-unstable || exit "$?"
+    lbc="upstream-unstable"
+    lbcFile="debian/lunarg-build-commit"
+    # Check if there's a debian/lunarg-build-commit file, if so, prefer it
+    [ -e ${lbcFile} ] && lbc=$(cat ${lbcFile})
+    [ "${lbc}" ] || ( echo "bogus ${lbcFile} contains \"${lbc}\""; continue )
+    updateCount=$(git rev-list ${lbc}..${commit} --count)
     if [ "${updateCount}" -gt "0" ]; then
 	echo "-------------------------------------"
 	echo "${updateCount} commits since last build"
 	echo "Building ${package}: CommitID=${commit}]}"
-	git reset --hard
-	git clean -f
-	git co debian-unstable || exit "$?"
-	generate-version-string -v -u ${commit}
+	generate-version-string -v -u ${commit} -l ${lbc}
     fi
     popd
 done
