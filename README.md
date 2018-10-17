@@ -97,7 +97,7 @@ with `-h` or `-?` args for usage help.
 
 - **`build-sdk-release`**
 
-    This script reads the 'SDKs/common/config.json` file from the `LunarHub-Doc`
+    This script reads the `SDKs/common/config.json` file from the `LunarHub-Doc`
     repository, and checks to see if any of the described repositories have
     changed since the last package build.  If so, it attempts to build the
     package with `build-package-from-commitid`.  There are many hardcoded
