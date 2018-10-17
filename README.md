@@ -22,13 +22,21 @@ with `-h` or `-?` args for usage help.
     descriptive package version string based on what it finds in the changelog,
     the nearest release git tags, and upstream git tags.
 
-    **_Usage:_** &nbsp; `generate-version-string [-v] [-g GIT_OPTS]`
+    **_Usage:_** &nbsp; `generate-version-string [-v] [-g GIT_OPTS] [-u UPSTREAM_COMMIT] [-l LAST_BUILD_UPSTREAM_COMMIT] [-d DEBIAN_COMMIT]`
 
     - `-v`: Verbose.  Outputs diagnostic information and alternate version
       strings to stderr (to help if you don't like the one it returns).
     - `-g GIT_OPTS`: This must be a single-quoted string, which will be passed
       to the `git` executable as parameter(s).  Useful for modifying where git
       looks for tags, etc...
+    - `-u`: Upstream Commit: This is the upstream commit/tag/branch that will
+      be used to calculate the version string. _Default: `upstream-unstable`_
+    - `'l`: Last Build Upstream Commit: This is the upstream commit ID of the
+      last build (usually stored in the `debian/lunarg-build-commit` file).
+      This argument is required to build an accurate version string if there are
+      no new upstream tags to base off since the last build.
+    - `-d`: Debian Commit: The commit ID of the debian packaging source to be
+      used in building the package. _Default: `debian-unstable`_
 
 - **`tag-release-build`**
 
@@ -50,7 +58,7 @@ with `-h` or `-?` args for usage help.
     changelog and any release tags and other optional arguments, and uses all of
     the above to kick off a cowbuilder build of the packages in question.
     
-    **_Usage:_** &nbsp; `build-package-from-commitid -c COMMIT_ID [-i] [-n] [-b BUILD_NUMBER] [-t TEMP_BRANCH] [-s BUILD_SUFFIX] [-d DEBIAN_PACKAGING_VERSION]`
+    **_Usage:_** &nbsp; `build-package-from-commitid -c COMMIT_ID [-i] [-n] [-b BUILD_NUMBER] [-t TEMP_BRANCH] [-s BUILD_SUFFIX] [-g GEN_VERS_ARGS]`
 
     - `-c COMMIT_ID` _REQUIRED_: This is the git commit ID you want to build
       the package from. It can be in the form of a SHA hash, tag name, branch
@@ -70,9 +78,8 @@ with `-h` or `-?` args for usage help.
       immediately prior to BUILD_VERSION. Often useful when building the same
       package for different purposes.  e.g. could be "~ci" for a CI build,
       or "test" for a testing build.  _Default: `"~autobuild"`_
-    - `d DEBIAN_PACKAGING_VERSION`: This normally won't be used, but allows you
-      to specify a debian packaging version other than `1` if that's needed.
-      _Default: `1`_
+    - `g GEN_VERS_ARGS`: The quoted string following this flag will be passed
+      unmodified to `generate-version-string` _Default: ""_
 
     The script makes the following assumptions:
 
@@ -87,6 +94,16 @@ with `-h` or `-?` args for usage help.
       `<source package name>_<upstream version>-<debian version>_<build version>`
     - It assumes that the latest `debian/changelog` entry corresponds to (and
       has the same version string as) the previously mentioned release build tag.
+
+- **`build-sdk-release`**
+
+    This script reads the 'SDKs/common/config.json` file from the `LunarHub-Doc`
+    repository, and checks to see if any of the described repositories have
+    changed since the last package build.  If so, it attempts to build the
+    package with `build-package-from-commitid`.  There are many hardcoded
+    assumptions in this script, including where the local working directories
+    for these git repositories are located, the structure of the `config.json`
+    file, and the list of buildable packages.  See the script for more details.
 
 - **`cowbuild-package-lunarg`**
 

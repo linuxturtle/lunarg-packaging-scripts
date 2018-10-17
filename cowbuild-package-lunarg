@@ -8,6 +8,7 @@ cowbuild_package () {
 
     git reset --hard
     rm -f "../${SOURCE}_${BASE_VERSION}-*"
+    debian/rules debian/control
     dch --vendor=$VENDOR --local=$LOCAL ""
     dch --vendor=$VENDOR --distribution=$DIST --release ""
     debuild -i -us -uc -sa -S --lintian-opts -X chng

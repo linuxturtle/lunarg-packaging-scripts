@@ -22,8 +22,8 @@ while getopts ":g:u:d:l:v" options; do
     esac
 done
 
-pkgsrc=$(dpkg-parsechangelog | sed -n 's/^Source: //p')
-changelogVersion=$(dpkg-parsechangelog | sed -n 's/^Version: //p')
+pkgsrc=$(dpkg-parsechangelog -SSource)
+changelogVersion=$(dpkg-parsechangelog -SVersion)
 lastReleaseTag=$(${gitCmd} describe --abbrev=0 --tags --match "${pkgsrc}_*" ${debCommit})
 debGitCommits=$(${gitCmd} rev-list ${lastReleaseTag}..${debCommit} --count)
 [ "$lbuCommit" ] && lbuGitCommits=$(${gitCmd} rev-list ${lbuCommit}..${usCommit} --count)
@@ -43,6 +43,8 @@ else
     usGitCommits=$(${gitCmd} rev-list ${upstreamTag}..${usCommit} --count)
 fi
 usBase=$(expr match "$upstreamTag" '^[^0-9]*\(.*$\)')
+# Replace any "-" in tag with "."
+usBase=${usBase//-/.}
 
 # Grab the base upstream version (everything to the left of the first "-")
 lrBase=${lastRelease%%-*}

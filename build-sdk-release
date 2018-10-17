@@ -97,8 +97,9 @@ popd
 # a build if not.
 for package in "${Packages[@]}"; do
     commit=${CommitID[${package}]}
-    echo "######################################"
+    echo "==================================================================="
     echo "Checking ${package}: CommitID=${commit}]}"
+    echo "-------------------------------------------------------------------"
     pushd "${LocalClone[${package}]}"|| exit "$?"
     git remote update || exit "$?"
     git reset --hard
@@ -108,13 +109,15 @@ for package in "${Packages[@]}"; do
     lbcFile="debian/lunarg-build-commit"
     # Check if there's a debian/lunarg-build-commit file, if so, prefer it
     [ -e ${lbcFile} ] && lbc=$(cat ${lbcFile})
-    [ "${lbc}" ] || ( echo "bogus ${lbcFile} contains \"${lbc}\""; continue )
+    lbc="$(git rev-parse ${lbc})"
+    [ "${lbc}" ] || ( echo "Last build commit is bogus/empty"; continue )
     updateCount=$(git rev-list ${lbc}..${commit} --count)
     if [ "${updateCount}" -gt "0" ]; then
-	echo "-------------------------------------"
-	echo "${updateCount} commits since last build"
-	echo "Building ${package}: CommitID=${commit}]}"
-	generate-version-string -v -u ${commit} -l ${lbc}
+	echo "    ######################################"
+	echo "    # ${updateCount} commits since last build"
+	echo "    # Building ${package}: CommitID=${commit}]}"
+	echo "    #-------------------------------------"
+	build-package-from-commitid -i -c ${commit} -s "~lunarg" -g "\'-l ${lbc}\'"
     fi
     popd
 done

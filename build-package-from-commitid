@@ -1,22 +1,22 @@
 #!/bin/bash
-usage="Usage: $(basename $0) -c COMMIT_ID [-i] [-n] [-b BUILD_NUMBER] [-t TEMP_BRANCH] [-s BUILD_SUFFIX] [-d DEBIAN_PACKAGING_VERSION]"
+usage="Usage: $(basename $0) -c COMMIT_ID [-i] [-n] [-b BUILD_NUMBER] [-t TEMP_BRANCH] [-s BUILD_SUFFIX] [-g GEN_VERS_STR_ARGS]"
 
 commitID=""
 buildNum="1"
-debVers="1"
 buildSuffix="~autobuild"
 tempBranch="build"
 interactive=""
 noBuild=""
 shaderc=""
+genVersArgs=""
 
-while getopts ":c:b:t:s:d:in" options; do
+while getopts ":c:b:t:s:g:in" options; do
     case $options in
 	c ) commitID="${OPTARG}";;
 	b ) buildNum="${OPTARG}";;
-	r ) tempBranch="${OPTARG}";;
+	t ) tempBranch="${OPTARG}";;
 	s ) buildSuffix="${OPTARG}";;
-	d ) debVers="${OPTARG}";;
+	g ) genVersArgs="${OPTARG}";;
 	i ) interactive="TRUE";;
 	n ) noBuild="TRUE";;
 	* ) echo $usage
@@ -31,6 +31,16 @@ fi
 
 git reset --hard
 git clean -f
+git checkout debian-unstable
+newVersion="$($(dirname $(readlink -f $0))/generate-version-string -v -u ${commitID} ${genVersArgs})"
+if [ "$interactive" ]; then
+    newVersion=$(zenity --entry \
+	    --title="Version String" \
+	    --text="Verify/modify Version string for this build" \
+	    --entry-text="$newVersion")
+fi
+[ -z "$newVersion" ] && exit 1
+
 git checkout -B upstream-unstable
 git reset --hard ${commitID}
 # I'm shaderc, and I'm special...
@@ -52,11 +62,9 @@ if [ "$interactive" ]; then
     --text="Enter a comment for this commit" \
     --entry-text="$cimsg")
 fi
-if [ ! -z "$cimsg" ]; then
-    git commit -m "$cimsg"
-else
-    exit 1
-fi
+[ -z "$cimsg" ] && exit 1
+
+git commit -m "$cimsg"
 cimsg="merge debian-unstable branch to connect histories"
 if [ "$interactive" ]; then
     cimsg=$(zenity --entry \
@@ -64,41 +72,28 @@ if [ "$interactive" ]; then
     --text="Enter a comment for this commit   " \
     --entry-text="$cimsg")
 fi
-if [ ! -z "$cimsg" ]; then
-    git merge debian-unstable -s ours -m "$cimsg"
-else
-    exit 1
-fi
+[ -z "$cimsg" ] && exit 1
 
-newVersion="$($(dirname $(readlink -f $0))/generate-version-string -v)"
-
+git merge debian-unstable -s ours -m "$cimsg"
+echo "Building Package Version: $newVersion"
+# Update changelog:
+cimsg="Automated package build"
 if [ "$interactive" ]; then
-    newVersion=$(zenity --entry \
-	    --title="Version String" \
-	    --text="Verify/modify Version string for this build" \
-	    --entry-text="$newVersion")
+    cimsg=$(zenity --entry \
+    --title="update debian/changelog" \
+    --text="Enter a comment for the changelog" \
+    --entry-text="$cimsg")
 fi
-if [ ! -z "$newVersion" ]; then
-    echo "Building Package Version: $newVersion"
-    # Update changelog:
-    cimsg="Automated package build"
-    if [ "$interactive" ]; then
-	cimsg=$(zenity --entry \
-	--title="update debian/changelog" \
-	--text="Enter a comment for the changelog" \
-	--entry-text="$cimsg")
-    fi
-    if [ ! -z "$cimsg" ]; then
-	dch -r --distribution=unstable ""
-	dch --newversion "${newVersion}-${debVers}" "$cimsg"
-    else
-	exit 1
-    fi
+[ -z "$cimsg" ] && exit 1
 
-    # Commit changelog and kick off a build..
-    if [ -z "$noBuild" ]; then
-	git add debian/changelog
-	git commit -m "$cimsg"
-	cowbuild-package-lunarg -b "${buildNum}" -s "${buildSuffix}"
-    fi
+dch -r --distribution=unstable ""
+dch --newversion "${newVersion}" "$cimsg"
+
+# Commit changelog and kick off a build..
+if [ -z "$noBuild" ]; then
+    git add debian/changelog
+    echo "$(git rev-parse $commitID)" > debian/lunarg-build-commit
+    git add debian/lunarg-build-commit
+    git commit -m "$cimsg"
+    cowbuild-package-lunarg -b "${buildNum}" -s "${buildSuffix}"
 fi
