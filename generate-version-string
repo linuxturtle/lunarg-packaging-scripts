@@ -26,7 +26,15 @@ pkgsrc=$(dpkg-parsechangelog -SSource)
 changelogVersion=$(dpkg-parsechangelog -SVersion)
 lastReleaseTag=$(${gitCmd} describe --abbrev=0 --tags --match "${pkgsrc}_*" ${debCommit})
 debGitCommits=$(${gitCmd} rev-list ${lastReleaseTag}..${debCommit} --count)
-[ "$lbuCommit" ] && lbuGitCommits=$(${gitCmd} rev-list ${lbuCommit}..${usCommit} --count)
+if [ -z $lbuCommit ]; then
+    # Let's guess at the last build commit. Default to upstream-unstable.
+    lbuCommit="upstream-unstable"
+    # But, if the debian/lunarg-build-commit file exists, use it instead.
+    lbcFile="debian/lunarg-build-commit"
+    [ -e ${lbcFile} ] && lbuCommit=$(cat ${lbcFile})
+fi
+lbuGitCommits=$(${gitCmd} rev-list ${lbuCommit}..${usCommit} --count)
+# Remove the package name from front of tag
 lastRelease="${lastReleaseTag##${pkgsrc}_}"
 # Reverse any ~ substitutions
 lastRelease=${lastRelease/"@t@"/"~"}
